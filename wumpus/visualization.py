@@ -52,6 +52,7 @@ class Visualizer:
         percept: Percept,
         turn: int = 0,
         alive: bool = True,
+        total_reward: int = 0,
     ) -> None:
         """
         Render the current game state to console output.
@@ -61,6 +62,7 @@ class Visualizer:
             percept: The agent's current percepts (stench, breeze, glitter, etc.)
             turn: Current turn number (for display purposes)
             alive: Whether the agent is still alive
+            total_reward: Cumulative reward so far in the episode
             
         Displayed information:
         - Grid with agent position and direction arrow
@@ -81,7 +83,7 @@ class Visualizer:
         
         # Percepts and inventory
         print(f"Percepts: {self._render_percepts(percept)}")
-        print(f"Reward: {percept.reward}")
+        print(f"Reward: {percept.reward}, Total Reward: {total_reward}")
         print(f"Inventory: Gold={agent_state.has_gold}, Arrow={agent_state.has_arrow}")
 
     def _draw_grid(self, agent_state: AgentState) -> str:
@@ -98,7 +100,7 @@ class Visualizer:
             
         TODO: Implement grid drawing
         """
-        lines = ["+" + "-" * (self.width * 2 - 1) + "+"]
+        lines = ["+" + "-" * (self.width * 2 + 1) + "+"]
         
         # Draw grid from top to bottom (y decreasing in display, but coordinates increase upward)
         for y in range(self.height - 1, -1, -1):
@@ -118,7 +120,7 @@ class Visualizer:
             row += "|"
             lines.append(row)
         
-        lines.append("+" + "-" * (self.width * 2 - 1) + "+")
+        lines.append("+" + "-" * (self.width * 2 + 1) + "+")
         return "\n".join(lines)
 
     def _direction_symbol(self, direction: Direction) -> str:
