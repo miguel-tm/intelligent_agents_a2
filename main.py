@@ -57,6 +57,25 @@ def run_episode(
     died = False
     has_arrow = True  # Agent starts with arrow
     
+    # Display initial state (Turn 0) if verbose
+    if verbose and visualizer is not None:
+        initial_state = AgentState(
+            position=Position(1, 1),  # Always starts at [1,1] in user coordinates
+            direction=environment.get_agent_direction(),
+            has_gold=False,
+            is_alive=True,
+            has_arrow=True,
+        )
+        print(f"\nTURN 0 (initial state)")
+        visualizer.render(
+            initial_state,
+            percept,
+            turn=0,
+            alive=True,
+            total_reward=0,
+            death_cause=None,
+        )
+    
     # Main episode loop
     while turns < max_turns:
         # Agent decides action
@@ -93,7 +112,7 @@ def run_episode(
                 is_alive=current_state.is_alive,
                 has_arrow=current_state.has_arrow,
             )
-            print(f"\n  Turn {turns}: Agent takes {action.name.upper()}")
+            print(f"\n\nTURN {turns - 1} --> TURN {turns}: Agent takes {action.name.upper()}")
             death_cause = None if environment.is_agent_alive() else environment.get_death_cause()
             visualizer.render(
                 display_state,
