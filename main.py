@@ -66,7 +66,7 @@ def run_episode(
             is_alive=True,
             has_arrow=True,
         )
-        print(f"\n\n{'-' * 60}")
+        print(f"\n{'-' * 60}")
         print("INITIAL STATE")
         visualizer.render(
             initial_state,
@@ -180,9 +180,9 @@ def main() -> None:
     ALLOW_CLIMB_WITHOUT_GOLD = True
     
     # Header
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 80)
     print("WUMPUS WORLD SIMULATOR - Assignment 1")
-    print("=" * 70)
+    print("=" * 80)
     print(f"Configuration: {WORLD_WIDTH}x{WORLD_HEIGHT} world, {NUM_EPISODES} episodes")
     print(f"Pit Probability: {PIT_PROBABILITY}, Allow Climb Without Gold: {ALLOW_CLIMB_WITHOUT_GOLD}")
     print(f"Agent: NaiveAgent (uniform random action selection)")
@@ -190,16 +190,16 @@ def main() -> None:
         print("Output Mode: Verbose (per-turn visualization)")
     else:
         print("Output Mode: Summary (episode summaries only)")
-    print("=" * 70 + "\n")
+    print("=" * 80 + "\n")
     
     # Run episodes
     results = []
     for episode_num in range(NUM_EPISODES):
         # Print episode title if verbose
         if verbose:
-            print("\n" + "=" * 50)
+            print("\n\n" + "=" * 80)
             print(f"EPISODE {episode_num + 1}")
-            print("=" * 50)
+            print("=" * 80)
         
         # Create new environment and agent for each episode
         env = WumpusWorld(
@@ -220,17 +220,20 @@ def main() -> None:
         # Print episode summary
         status = "ESCAPED" if result["escaped"] else ("DIED" if result["died"] else "TIMEOUT")
         print(
-            f"Episode {episode_num + 1:2d}: "
+            f"\n{'-' * 60}"
+            f"\nEpisode ended"
+            f"\nEpisode {episode_num + 1:2d}: "
             f"Steps={result['turns_taken']:3d} | "
             f"Reward={result['total_reward']:7.0f} | "
             f"Gold={str(result['gold_collected']):5s} | "
             f"{status}"
+            f"\n{'-' * 60}"
         )
     
     # Print aggregate statistics
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 80)
     print("AGGREGATE STATISTICS")
-    print("=" * 70)
+    print("=" * 80)
     
     total_reward = sum(r["total_reward"] for r in results)
     total_steps = sum(r["turns_taken"] for r in results)
@@ -245,7 +248,7 @@ def main() -> None:
     print(f"Total Reward: {total_reward:.0f}")
     print(f"Average Reward per Episode: {total_reward/NUM_EPISODES:.1f}")
     print(f"Average Steps per Episode: {total_steps/NUM_EPISODES:.1f}")
-    print("=" * 70 + "\n")
+    print("=" * 80 + "\n")
 
 
 if __name__ == "__main__":
