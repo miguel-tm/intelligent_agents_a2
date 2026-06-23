@@ -19,7 +19,7 @@ TODO: Add command-line arguments for configuration
 
 from wumpus import WumpusWorld, Visualizer
 from agents import NaiveAgent
-from wumpus.models import Action, Percept
+from wumpus.models import Action, Percept, AgentState, Position
 import sys
 
 
@@ -51,7 +51,7 @@ def run_episode(
     TODO: Implement episode loop
     """
     # Initialize episode
-    state = environment.reset()
+    environment.reset()
     agent.reset()
     percept = Percept()  # Initial empty percept
     
@@ -61,6 +61,7 @@ def run_episode(
     gold_collected = False
     escaped = False
     died = False
+    has_arrow = True  # Agent starts with arrow
     
     # Main episode loop
     while turns < max_turns:
@@ -72,9 +73,34 @@ def run_episode(
         total_reward += percept.reward
         turns += 1
         
-        # Optional visualization per turn
+        # Track agent inventory changes
+        if action == Action.SHOOT:
+            has_arrow = False
+        if percept.glitter and not gold_collected:
+            gold_collected = True
+        
+        # Get current agent state from environment for visualization
         if verbose and visualizer is not None:
-            visualizer.render(state, percept, turn=turns, alive=environment.is_agent_alive())
+            current_state = AgentState(
+                position=environment.get_agent_position(),
+                direction=environment.get_agent_direction(),
+                has_gold=gold_collected,
+                is_alive=environment.is_agent_alive(),
+                has_arrow=has_arrow,
+            )
+            # Convert internal coordinates [0,0] to user coordinates [1,1]
+            display_state = AgentState(
+                position=Position(
+                    current_state.position.x + 1,
+                    current_state.position.y + 1,
+                ),
+                direction=current_state.direction,
+                has_gold=current_state.has_gold,
+                is_alive=current_state.is_alive,
+                has_arrow=current_state.has_arrow,
+            )
+            print(f"\n  Turn {turns}: Agent takes {action.name.upper()}")
+            visualizer.render(display_state, percept, turn=turns, alive=environment.is_agent_alive())
         
         # Detect episode termination conditions
         if percept.reward == 1000:  # Escaped with gold
@@ -84,8 +110,6 @@ def run_episode(
         elif percept.reward == -1000:  # Died (pit or wumpus)
             died = True
             break
-        elif percept.glitter and not gold_collected:  # Just grabbed gold
-            gold_collected = True
         
         if ended:
             # Episode ended naturally
@@ -148,6 +172,12 @@ def main() -> None:
     # Run episodes
     results = []
     for episode_num in range(NUM_EPISODES):
+        # Print episode title if verbose
+        if verbose:
+            print("\n" + "=" * 50)
+            print(f"EPISODE {episode_num + 1}")
+            print("=" * 50)
+        
         # Create new environment and agent for each episode
         env = WumpusWorld(
             width=WORLD_WIDTH,

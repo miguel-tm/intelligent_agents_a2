@@ -72,9 +72,9 @@ class Visualizer:
         """
         # Header with turn and status
         status = "Alive" if alive else "Dead"
-        print(f"\n{'─' * 60}")
+        print(f"\n{'-' * 60}")
         print(f"Turn {turn} | Status: {status} | Position: {agent_state.position}")
-        print(f"{'─' * 60}")
+        print(f"{'-' * 60}")
         
         # Grid display
         print(self._draw_grid(agent_state))
@@ -98,11 +98,11 @@ class Visualizer:
             
         TODO: Implement grid drawing
         """
-        lines = ["╔" + "═" * (self.width * 2 - 1) + "╗"]
+        lines = ["+" + "-" * (self.width * 2 - 1) + "+"]
         
         # Draw grid from top to bottom (y decreasing in display, but coordinates increase upward)
         for y in range(self.height - 1, -1, -1):
-            row = "║ "
+            row = "| "
             for x in range(self.width):
                 # Check if agent is at this position
                 if agent_state.position.x == x and agent_state.position.y == y:
@@ -112,10 +112,10 @@ class Visualizer:
                     # Draw empty cell
                     row += "."
                 row += " "
-            row += "║"
+            row += "|"
             lines.append(row)
         
-        lines.append("╚" + "═" * (self.width * 2 - 1) + "╝")
+        lines.append("+" + "-" * (self.width * 2 - 1) + "+")
         return "\n".join(lines)
 
     def _direction_symbol(self, direction: Direction) -> str:
