@@ -55,6 +55,7 @@ intelligent_agents_a1/
     ├── test_models.py             # Tests for Direction, Action, Position, Percept, AgentState
     ├── test_environment.py        # Tests for WumpusWorld mechanics and actions
     ├── test_percepts.py           # Tests for percept generation and rewards
+    ├── test_episode_runner.py     # Tests for run_episode() termination paths
     └── test_actions.py            # Placeholder for action execution tests
 ```
 
@@ -236,11 +237,12 @@ Average Steps per Episode: 12.2
 
 ### Episode Termination
 Episodes end when:
-- **Agent climbs out at [1,1]:** Success (large reward if gold collected)
-- **Agent falls in pit:** Death (large negative penalty)
-- **Agent meets wumpus:** Death (large negative penalty)
-- **Agent shoots wumpus:** Wumpus is eliminated but episode continues
-- **Max turns exceeded:** Episode timeout (configurable)
+- **Agent climbs out at [1,1] with gold:** `ESCAPED (success!)` — +1000 reward
+- **Agent climbs out at [1,1] without gold:** `ESCAPED (no gold)` — -1 reward (time cost only)
+- **Agent falls in pit:** `DIED` — -1000 penalty
+- **Agent meets wumpus:** `DIED` — -1000 penalty
+- **Agent shoots wumpus:** Wumpus eliminated, episode continues
+- **Max turns exceeded:** `TIMEOUT` (configurable, default 1000)
 
 ### Rewards (Per Assignment Specification)
 - `-1` per action (time penalty)
@@ -260,14 +262,18 @@ Episodes end when:
 - [x] Comprehensive docstrings for all classes
 - [x] Type hints throughout
 - [x] **models.py:** Direction turn logic, Position validation ✅
-- [x] **environment.py:** World initialization, action execution, percept generation ✅
+- [x] **environment.py:** World initialization, action execution, percept generation, hidden-state debug accessors ✅
 - [x] **naive_agent.py:** Random action selection ✅
 - [x] **visualization.py:** Grid rendering with ASCII art, agent direction symbols, percept display ✅
+- [x] **episode_runner.py:** Shared game loop (CLI + web), `record_history` for turn-by-turn replay ✅
 - [x] **main.py:** Game loop, episode management, visualization integration ✅
-- [x] **tests/:** 86 unit tests covering models, environment, and percepts ✅
+- [x] **streamlit_app.py:** Interactive web visualization — Replay tab (step-through) + Statistics tab ✅
+- [x] **streamlit_render.py:** HTML/CSS emoji board renderer, percept badges, visited-cell shading ✅
+- [x] **tests/:** 99 unit tests covering models, environment, percepts, and episode runner ✅
 - [x] **pytest.ini:** Test configuration for proper module imports ✅
+- [x] **Bug fix:** Climb-without-gold now correctly reports `ESCAPED (no gold)` instead of `TIMEOUT` ✅
 
-**Total: 86/86 tests passing**
+**Total: 99/99 tests passing**
 
 ---
 
@@ -278,10 +284,11 @@ All tests follow this pattern:
 2. **Execute:** Run actions or scenarios
 3. **Verify:** Assert expected state changes and percepts
 
-**Test Coverage:** 86 comprehensive tests covering:
+**Test Coverage:** 99 comprehensive tests covering:
 - **test_models.py** (55 tests): Direction logic, Position validation, Action enum, Percept structure
 - **test_environment.py** (22 tests): Environment initialization, movement, percept generation, episode termination
 - **test_percepts.py** (9 tests): Sensing accuracy, reward computation
+- **test_episode_runner.py** (13 tests): `run_episode()` termination paths — climb-without-gold, death, escape-with-gold
 - **test_actions.py** (0 tests): Placeholder for future action-specific tests
 
 **Run tests:** `pytest tests/ -v` or `pytest tests/ -q`
