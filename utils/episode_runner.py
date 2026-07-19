@@ -240,11 +240,10 @@ def run_episode(
             break
         
         if ended:
-            # Episode ended naturally (non-terminal action)
-            if percept.reward > 0:
-                escaped = True
-            elif percept.reward < -100:  # Death penalty
-                died = True
+            # The death (-1000) and gold-escape (1000) cases are already handled
+            # above, so reaching here with ended=True means the agent climbed
+            # out without gold (reward=-1). Treat as escaped (alive, no gold).
+            escaped = True
             break
     
     result = {

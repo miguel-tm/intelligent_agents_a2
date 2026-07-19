@@ -83,8 +83,10 @@ def _run_batch(cfg: dict) -> list[dict]:
 
 
 def _outcome_label(result: dict) -> str:
-    if result["escaped"]:
+    if result["escaped"] and result["gold_collected"]:
         return "ESCAPED"
+    if result["escaped"]:
+        return "ESCAPED (no gold)"
     if result["died"]:
         return "DIED"
     return "TIMEOUT"
