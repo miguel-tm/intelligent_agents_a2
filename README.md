@@ -1,4 +1,4 @@
-# Wumpus World Simulator - Assignment 1
+# Wumpus World Simulator - Assignment 2
 
 **University of Toronto - Intelligent Agents Course**  
 **Student:** Miguel Morales (@miguelmog10)
@@ -9,21 +9,21 @@
 
 This project implements a **Wumpus World environment simulator** in Python using object-oriented design principles.
 
-This is **Assignment 1 only**. It establishes the foundation for a clean, extensible Wumpus World implementation suitable for future assignments on agent learning and planning.
+This is **Assignment 2**, extending the Assignment 1 foundation with a new **MovePlanningAgent** that tracks its own position, builds a safe-cell knowledge graph, and uses a custom BFS planner to escape with gold.
 
 ### Core Components
 - **Configurable environment** with random pit, wumpus, and gold placement
 - **Percept-based sensing** (stench, breeze, glitter, bump, scream, reward)
 - **Action-based agent interface** enforcing separation of concerns
-- **NaiveAgent baseline** for testing environment mechanics
-- **Extensible architecture** prepared for intelligent agents (Assignment 2+)
+- **NaiveAgent baseline** for comparison
+- **MovePlanningAgent** with dead-reckoning, safe graph (NetworkX), and BFS escape planner
 
 ---
 
 ## 📁 Repository Structure
 
 ```
-intelligent_agents_a1/
+intelligent_agents_a2/
 │
 ├── README.md                      # This file
 ├── requirements.txt               # Python dependencies
@@ -31,7 +31,8 @@ intelligent_agents_a1/
 ├── streamlit_app.py               # Web entry point (advanced visualization)
 │
 ├── docs/
-│   └── assignment1_requirements.md  # Detailed assignment specification
+│   ├── assignment1_requirements.md  # Assignment 1 specification (historical)
+│   └── assignment2_requirements.md  # Assignment 2 specification
 │
 ├── wumpus/                        # Core environment package
 │   ├── __init__.py               # Package exports
@@ -43,7 +44,9 @@ intelligent_agents_a1/
 ├── agents/                        # Agent package
 │   ├── __init__.py               # Package exports
 │   ├── base_agent.py             # Abstract Agent class (enforces percept-only interface)
-│   └── naive_agent.py            # NaiveAgent (random action selection)
+│   ├── naive_agent.py            # NaiveAgent (random action selection, A1 baseline)
+│   ├── move_planning_agent.py    # MovePlanningAgent (BFS escape planner, A2)
+│   └── bfs_planner.py            # SafeGraph + bfs_shortest_actions (A2)
 │
 ├── utils/                         # Shared utilities
 │   ├── __init__.py               # Package exports
@@ -51,12 +54,14 @@ intelligent_agents_a1/
 │   └── streamlit_render.py       # HTML/CSS board rendering for the web UI
 │
 └── tests/                         # Test suite
-    ├── __init__.py                # Test package
     ├── test_models.py             # Tests for Direction, Action, Position, Percept, AgentState
     ├── test_environment.py        # Tests for WumpusWorld mechanics and actions
     ├── test_percepts.py           # Tests for percept generation and rewards
     ├── test_episode_runner.py     # Tests for run_episode() termination paths
-    └── test_actions.py            # Placeholder for action execution tests
+    ├── test_actions.py            # Placeholder for action execution tests
+    ├── test_bfs_planner.py        # Tests for SafeGraph and bfs_shortest_actions (A2)
+    ├── test_move_planning_agent.py # Tests for MovePlanningAgent state/behaviour (A2)
+    └── test_move_planning_integration.py  # Full-episode integration tests (A2)
 ```
 
 ### Module Responsibilities
@@ -67,11 +72,13 @@ intelligent_agents_a1/
 | **environment.py** | `WumpusWorld` class—manages hidden state, executes actions, generates percepts |
 | **visualization.py** | `Visualizer` class—renders game state (grid, agent, percepts) |
 | **base_agent.py** | Abstract `Agent` class—interface ensuring agents only see percepts |
-| **naive_agent.py** | `NaiveAgent` implementation—uniform random action selection |
+| **naive_agent.py** | `NaiveAgent` implementation—uniform random action selection (A1 baseline) |
+| **move_planning_agent.py** | `MovePlanningAgent`—dead-reckoning, safe graph, BFS escape planner (A2) |
+| **bfs_planner.py** | `SafeGraph` (NetworkX DiGraph) + `bfs_shortest_actions` (custom BFS) (A2) |
 | **episode_runner.py** | `run_episode()`—shared game loop used by both the CLI and web UI |
 | **streamlit_render.py** | HTML/CSS grid rendering helpers for the Streamlit UI |
-| **main.py** | CLI entry point—game loop, episode management, ASCII visualization |
-| **streamlit_app.py** | Web entry point—interactive replay and statistics dashboard |
+| **main.py** | CLI entry point—agent selection (`--agent`), episode management, ASCII visualization |
+| **streamlit_app.py** | Web entry point—interactive replay and statistics dashboard with agent selector |
 
 ---
 
@@ -113,12 +120,18 @@ This runs a standard game:
 - 4×4 grid world
 - Random wumpus and gold placement
 - Pit probability of 0.2
-- NaiveAgent making random moves
+- **MovePlanningAgent** making planned moves (default)
 - Visualization (ASCII grid) suppressed, only episode summaries printed
+
+### Run with the NaiveAgent baseline
+```bash
+python main.py --agent naive
+```
 
 ### Run with per-turn visualization (grid display for each turn)
 ```bash
 python main.py --verbose
+python main.py --agent naive --verbose
 ```
 - Visualization (ASCII grid) displayed for each turn
 
@@ -129,6 +142,7 @@ interactive experience, launch the Streamlit app:
 streamlit run streamlit_app.py
 ```
 Features:
+- **Agent selector:** choose between `MovePlanningAgent` (default) and `NaiveAgent` from the sidebar.
 - **Replay tab:** generate a single episode and step through it turn by turn
   (First / Prev / Next / Last, slider scrub) on a graphical emoji grid.
 - **Statistics tab:** run many episodes and view aggregate metrics
@@ -137,7 +151,7 @@ Features:
   max turns, random seed, and a **Reveal hidden world** debug toggle that overlays
   the true wumpus/gold/pit locations.
 
-> The web UI reuses the exact same `WumpusWorld`, `NaiveAgent`, and `run_episode()`
+> The web UI reuses the exact same `WumpusWorld`, agents, and `run_episode()`
 > logic as the CLI, so both stay in sync. The "reveal hidden world" overlay is for
 > debugging/teaching only—agents still receive information solely through percepts.
 
@@ -257,23 +271,27 @@ Episodes end when:
 
 ## 📋 Implementation Status
 
-### ✅ Implementation Complete
-- [x] Class structure and module organization
-- [x] Comprehensive docstrings for all classes
-- [x] Type hints throughout
-- [x] **models.py:** Direction turn logic, Position validation ✅
-- [x] **environment.py:** World initialization, action execution, percept generation, hidden-state debug accessors ✅
-- [x] **naive_agent.py:** Random action selection ✅
-- [x] **visualization.py:** Grid rendering with ASCII art, agent direction symbols, percept display ✅
-- [x] **episode_runner.py:** Shared game loop (CLI + web), `record_history` for turn-by-turn replay ✅
-- [x] **main.py:** Game loop, episode management, visualization integration ✅
-- [x] **streamlit_app.py:** Interactive web visualization — Replay tab (step-through) + Statistics tab ✅
-- [x] **streamlit_render.py:** HTML/CSS emoji board renderer, percept badges, visited-cell shading ✅
-- [x] **tests/:** 99 unit tests covering models, environment, percepts, and episode runner ✅
-- [x] **pytest.ini:** Test configuration for proper module imports ✅
-- [x] **Bug fix:** Climb-without-gold now correctly reports `ESCAPED (no gold)` instead of `TIMEOUT` ✅
+### ✅ Assignment 2 Complete
+- [x] **move_planning_agent.py:** Dead-reckoning, filtered action pool, GRAB/CLIMB overrides, BFS escape execution ✅
+- [x] **bfs_planner.py:** `SafeGraph` (NetworkX DiGraph, 4 nodes per cell, turn + forward edges) + custom `bfs_shortest_actions` ✅
+- [x] **main.py:** `--agent {move_planning,naive}` flag, `MovePlanningAgent` default ✅
+- [x] **streamlit_app.py:** Agent sidebar dropdown, `MovePlanningAgent` default ✅
+- [x] **docs/assignment2_requirements.md:** Full A2 specification ✅
+- [x] **tests/test_bfs_planner.py:** 28 tests for `SafeGraph` and `bfs_shortest_actions` ✅
+- [x] **tests/test_move_planning_agent.py:** 33 unit tests for agent state and behaviour ✅
+- [x] **tests/test_move_planning_integration.py:** 16 full-episode integration tests ✅
 
-**Total: 99/99 tests passing**
+**Total: 176/176 tests passing**
+
+### ✅ Assignment 1 Complete (foundation)
+- [x] **models.py:** Direction turn logic, Position validation ✅
+- [x] **environment.py:** World initialization, action execution, percept generation ✅
+- [x] **naive_agent.py:** Random action selection ✅
+- [x] **visualization.py:** Grid rendering with ASCII art ✅
+- [x] **episode_runner.py:** Shared game loop (CLI + web) ✅
+- [x] **main.py:** Game loop, episode management, visualization integration ✅
+- [x] **streamlit_app.py:** Interactive web visualization — Replay + Statistics tabs ✅
+- [x] **streamlit_render.py:** HTML/CSS emoji board renderer ✅
 
 ---
 
@@ -284,12 +302,15 @@ All tests follow this pattern:
 2. **Execute:** Run actions or scenarios
 3. **Verify:** Assert expected state changes and percepts
 
-**Test Coverage:** 99 comprehensive tests covering:
+**Test Coverage:** 176 comprehensive tests covering:
 - **test_models.py** (55 tests): Direction logic, Position validation, Action enum, Percept structure
 - **test_environment.py** (22 tests): Environment initialization, movement, percept generation, episode termination
 - **test_percepts.py** (9 tests): Sensing accuracy, reward computation
-- **test_episode_runner.py** (13 tests): `run_episode()` termination paths — climb-without-gold, death, escape-with-gold
-- **test_actions.py** (0 tests): Placeholder for future action-specific tests
+- **test_episode_runner.py** (13 tests): `run_episode()` termination paths
+- **test_actions.py** (0 tests): Placeholder
+- **test_bfs_planner.py** (28 tests): `SafeGraph` node/edge structure, corridor/L-shape BFS paths, multi-goal BFS
+- **test_move_planning_agent.py** (33 tests): Action pool constraints, glitter→GRAB, dead reckoning, visited cells, graph nodes, CLIMB safety, reset
+- **test_move_planning_integration.py** (16 tests): Action legality invariants, escape-with-gold rate, state consistency, comparative performance vs NaiveAgent
 
 **Run tests:** `pytest tests/ -v` or `pytest tests/ -q`
 
@@ -302,10 +323,15 @@ All tests follow this pattern:
 - [wumpus/environment.py](wumpus/environment.py) — Core environment logic
 - [agents/base_agent.py](agents/base_agent.py) — Agent interface
 
-**Then explore:**
-- [agents/naive_agent.py](agents/naive_agent.py) — Example agent implementation
-- [main.py](main.py) — Game loop structure
-- [docs/assignment1_requirements.md](docs/assignment1_requirements.md) — Full specification
+**Assignment 2 (new):**
+- [agents/move_planning_agent.py](agents/move_planning_agent.py) — MovePlanningAgent implementation
+- [agents/bfs_planner.py](agents/bfs_planner.py) — SafeGraph + BFS planner
+
+**Reference:**
+- [agents/naive_agent.py](agents/naive_agent.py) — Baseline agent (A1)
+- [main.py](main.py) — CLI entry point with `--agent` flag
+- [docs/assignment2_requirements.md](docs/assignment2_requirements.md) — A2 specification
+- [docs/assignment1_requirements.md](docs/assignment1_requirements.md) — A1 specification (historical)
 
 ---
 
