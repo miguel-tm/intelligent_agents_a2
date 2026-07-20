@@ -50,7 +50,9 @@ def main() -> None:
     WORLD_WIDTH = 4
     WORLD_HEIGHT = 4
     PIT_PROBABILITY = 0.2
-    ALLOW_CLIMB_WITHOUT_GOLD = True
+    ALLOW_CLIMB_WITHOUT_GOLD = True  # World-level setting; may not affect all agents
+                                     # (e.g. MovePlanningAgent never CLIMBs without gold
+                                     # regardless of this flag, due to its internal logic)
 
     # Header
     agent_label = "MovePlanningAgent" if agent_choice == "move_planning" else "NaiveAgent (uniform random)"

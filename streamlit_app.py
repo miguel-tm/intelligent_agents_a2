@@ -114,7 +114,16 @@ agent_choice = st.sidebar.selectbox(
 width = st.sidebar.slider("World width", min_value=2, max_value=8, value=4)
 height = st.sidebar.slider("World height", min_value=2, max_value=8, value=4)
 pit_prob = st.sidebar.slider("Pit probability", min_value=0.0, max_value=0.6, value=0.2, step=0.05)
-allow_climb = st.sidebar.checkbox("Allow climb without gold", value=True)
+allow_climb = st.sidebar.checkbox(
+    "Allow climb without gold",
+    value=True,
+    help=(
+        "World-level setting: when enabled, any agent can CLIMB at the start "
+        "position even without gold (ending the episode early with a small penalty). "
+        "Note: this may not affect all agents — for example, MovePlanningAgent never "
+        "CLIMBs without gold regardless of this setting, due to its internal logic."
+    ),
+)
 max_turns = st.sidebar.slider("Max turns", min_value=10, max_value=2000, value=1000, step=10)
 num_episodes = st.sidebar.slider("Episodes (Statistics tab)", min_value=1, max_value=500, value=20)
 
