@@ -1,4 +1,90 @@
-# Assignment 1 Complete Implementation Summary
+# Wumpus World — Implementation Summary
+
+**Status:** ✅ Assignment 1 COMPLETE (99/99 tests) | ✅ Assignment 2 COMPLETE (176/176 tests)
+
+---
+
+## Assignment 2 — MovePlanningAgent
+
+### New Modules
+
+| Module | Responsibility |
+|--------|----------------|
+| `agents/move_planning_agent.py` | `MovePlanningAgent` — stateful BFS-planning agent |
+| `agents/bfs_planner.py` | `SafeGraph` (NetworkX DiGraph wrapper) + `bfs_shortest_actions` (custom BFS) |
+| `docs/assignment2_requirements.md` | Assignment 2 specification |
+| `tests/test_bfs_planner.py` | 28 unit tests for `SafeGraph` and `bfs_shortest_actions` |
+| `tests/test_move_planning_agent.py` | 33 unit tests for `MovePlanningAgent` state/behaviour |
+| `tests/test_move_planning_integration.py` | 16 integration tests (full episodes, legality, escape rate) |
+
+### MovePlanningAgent Architecture
+
+**Internal state:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_position` | `Position` | Dead-reckoned current position (0-based) |
+| `_direction` | `Direction` | Dead-reckoned facing direction |
+| `_has_gold` | `bool` | Whether gold has been picked up |
+| `_visited_safe` | `set[Position]` | All cells successfully entered |
+| `_safe_graph` | `SafeGraph` | NetworkX DiGraph of safe navigable states |
+| `_last_action` | `Action \| None` | Previous action (needed for dead reckoning) |
+| `_plan` | `deque[Action]` | Queued BFS escape actions |
+
+**`get_action()` priority order:**
+1. Has gold + at start → `CLIMB`
+2. Has gold + plan queued → pop next planned action
+3. Has gold + plan empty → run BFS; pop first action (or continue exploring if unreachable)
+4. Glitter sensed → `GRAB` (sets `_has_gold = True`)
+5. Otherwise → random choice from `[FORWARD, TURN_LEFT, TURN_RIGHT, SHOOT]`
+
+**Dead reckoning:**
+- `FORWARD` + no bump → advance `_position` one step in `_direction`
+- `FORWARD` + bump → `_position` unchanged
+- `TURN_LEFT/TURN_RIGHT` → update `_direction`
+- Other actions → no change
+
+**Safe Graph (NetworkX DiGraph):**
+- Nodes: `(x, y, Direction)` — 4 nodes per visited cell
+- Turn edges: `TURN_LEFT`, `TURN_RIGHT` intra-cell (8 per cell)
+- Forward edges: `FORWARD` bidirectional between adjacent safe cells (2 per adjacent pair)
+- Incremental update: forward edges to already-known neighbours added when a new cell is registered
+
+**BFS Planner (`bfs_shortest_actions`):**
+- Custom BFS using `collections.deque` (no NetworkX path algorithms)
+- Returns `list[Action]` — empty if already at goal, `None` if unreachable
+- Goal: any `(x, y, Direction)` node where `(x, y) == start_position`
+- Accepts a predicate so multi-goal search is a first-class concern
+
+### Entry Point Changes
+
+**`main.py`:** add `--agent {move_planning,naive}` CLI flag, default `move_planning`
+```bash
+python main.py                          # MovePlanningAgent (default)
+python main.py --agent naive            # NaiveAgent baseline
+python main.py --agent move_planning --verbose
+```
+
+**`streamlit_app.py`:** sidebar "Agent" dropdown (`move_planning` default, `naive` option)
+
+### Test Coverage (77 New Tests)
+
+- `test_bfs_planner.py` (28): node/edge structure, corridor/L-shape BFS paths, multi-goal
+- `test_move_planning_agent.py` (33): pool constraints, glitter→GRAB, dead reckoning, visited cells, graph node count, CLIMB safety, reset
+- `test_move_planning_integration.py` (16): action legality, escape-with-gold rate, state consistency, performance vs NaiveAgent
+
+### Design Decisions
+
+1. **Safe cell = any visited cell.** No probabilistic stench/breeze inference. Keeps the graph construction simple and semantically precise.
+2. **Separate `bfs_planner.py` module.** BFS and `SafeGraph` are independently unit-testable without instantiating an agent.
+3. **`has_gold` set at decision time.** When `percept.glitter` causes the agent to choose `GRAB`, `_has_gold` is set immediately in the same call — no need to wait for the next percept.
+4. **Re-plan on every turn while has_gold and plan is empty.** Handles the (rare) case where BFS returns `None` initially — retried each turn as more safe cells are discovered.
+5. **Optional injected `random.Random`.** Agent accepts an `rng` kwarg so tests are reproducible without disturbing world RNG.
+6. **No changes to `WumpusWorld` or `episode_runner.py`.** The agent works purely from percepts; the environment and game loop are untouched.
+
+---
+
+## Assignment 1 — Foundation Implementation
 
 **Status:** ✅ COMPLETE - 99/99 tests passing
 
