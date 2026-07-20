@@ -19,7 +19,7 @@ import random
 import pandas as pd
 import streamlit as st
 
-from agents import NaiveAgent
+from agents import NaiveAgent, MovePlanningAgent
 from utils import run_episode
 from utils.streamlit_render import (
     direction_emoji,
@@ -45,12 +45,19 @@ def _build_world(cfg: dict) -> WumpusWorld:
     )
 
 
+def _make_agent(cfg: dict):
+    """Instantiate the selected agent."""
+    if cfg["agent"] == "move_planning":
+        return MovePlanningAgent()
+    return NaiveAgent()
+
+
 def _generate_replay(cfg: dict) -> dict:
     """Run a single episode with history captured for step-through replay."""
     if cfg["seed"] is not None:
         random.seed(cfg["seed"])
     env = _build_world(cfg)
-    agent = NaiveAgent()
+    agent = _make_agent(cfg)
     return run_episode(
         agent,
         env,
@@ -68,7 +75,7 @@ def _run_batch(cfg: dict) -> list[dict]:
     results = []
     for _ in range(cfg["num_episodes"]):
         env = _build_world(cfg)
-        agent = NaiveAgent()
+        agent = _make_agent(cfg)
         results.append(
             run_episode(
                 agent,
@@ -97,6 +104,13 @@ def _outcome_label(result: dict) -> str:
 # --------------------------------------------------------------------------- #
 st.sidebar.header("\u2699\ufe0f Configuration")
 
+agent_choice = st.sidebar.selectbox(
+    "Agent",
+    options=["move_planning", "naive"],
+    format_func=lambda x: "MovePlanningAgent" if x == "move_planning" else "NaiveAgent",
+    index=0,
+)
+
 width = st.sidebar.slider("World width", min_value=2, max_value=8, value=4)
 height = st.sidebar.slider("World height", min_value=2, max_value=8, value=4)
 pit_prob = st.sidebar.slider("Pit probability", min_value=0.0, max_value=0.6, value=0.2, step=0.05)
@@ -116,10 +130,12 @@ config = {
     "max_turns": max_turns,
     "num_episodes": num_episodes,
     "seed": int(seed_value) if use_seed else None,
+    "agent": agent_choice,
 }
 
 st.title("\U0001f479 Wumpus World \u2014 Advanced Visualization")
-st.caption("NaiveAgent (uniform random actions). The ASCII CLI (main.py) remains available for debugging.")
+_agent_caption = "MovePlanningAgent (BFS escape planner)" if agent_choice == "move_planning" else "NaiveAgent (uniform random actions)"
+st.caption(f"{_agent_caption}. The ASCII CLI (main.py) remains available for debugging.")
 
 replay_tab, stats_tab = st.tabs(["\U0001f3ae Replay", "\U0001f4ca Statistics"])
 

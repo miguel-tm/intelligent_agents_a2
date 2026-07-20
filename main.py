@@ -1,11 +1,13 @@
 """
 Main entry point for the Wumpus World simulator.
 
-This script runs multiple episodes of the Wumpus World with a NaiveAgent baseline.
+This script runs multiple episodes of the Wumpus World with a selectable agent.
 
 Usage:
-    python main.py              # Run 5 episodes (default)
-    python main.py --verbose    # Run with per-turn visualization
+    python main.py                             # Run 5 episodes with MovePlanningAgent (default)
+    python main.py --agent naive               # Run with NaiveAgent baseline
+    python main.py --verbose                   # Per-turn visualization (MovePlanningAgent)
+    python main.py --agent naive --verbose     # Per-turn visualization (NaiveAgent)
 
 Output:
     - Per-episode summary: steps, reward, gold collected, status
@@ -14,7 +16,7 @@ Output:
 """
 
 from wumpus import WumpusWorld, Visualizer
-from agents import NaiveAgent
+from agents import NaiveAgent, MovePlanningAgent
 import sys
 
 from utils import run_episode
@@ -23,53 +25,55 @@ from utils import run_episode
 def main() -> None:
     """
     Run the Wumpus World simulator.
-    
-    Default behavior:
-    - Create a 4x4 Wumpus World with standard configuration
-    - Run a NaiveAgent in the environment (5 episodes)
-    - Display output (optional visualization with --verbose)
-    - Print final statistics
-    
-    Future enhancement:
-    - Add full command-line argument parsing for:
-        - World size (--world-size N)
-        - Pit probability (--pit-prob P)
-        - Number of episodes (--episodes E)
-        - Agent type selection (--agent-type TYPE)
-        - Visualization control (--no-visualization)
+
+    Default behaviour:
+    - Create a 4×4 Wumpus World with standard configuration.
+    - Run the selected agent for 5 episodes.
+    - Display output (optional per-turn visualization with --verbose).
+    - Print final aggregate statistics.
     """
     # Parse command-line arguments
     verbose = "--verbose" in sys.argv
-    
+
+    agent_choice = "move_planning"
+    if "--agent" in sys.argv:
+        idx = sys.argv.index("--agent")
+        if idx + 1 < len(sys.argv):
+            agent_choice = sys.argv[idx + 1]
+
+    if agent_choice not in ("move_planning", "naive"):
+        print(f"Unknown agent '{agent_choice}'. Choose 'move_planning' or 'naive'.")
+        sys.exit(1)
+
     # Game configuration
     NUM_EPISODES = 5
     WORLD_WIDTH = 4
     WORLD_HEIGHT = 4
     PIT_PROBABILITY = 0.2
     ALLOW_CLIMB_WITHOUT_GOLD = True
-    
+
     # Header
+    agent_label = "MovePlanningAgent" if agent_choice == "move_planning" else "NaiveAgent (uniform random)"
     print("\n" + "=" * 80)
-    print("WUMPUS WORLD SIMULATOR - Assignment 1")
+    print("WUMPUS WORLD SIMULATOR - Assignment 2")
     print("=" * 80)
     print(f"Configuration: {WORLD_WIDTH}x{WORLD_HEIGHT} world, {NUM_EPISODES} episodes")
     print(f"Pit Probability: {PIT_PROBABILITY}, Allow Climb Without Gold: {ALLOW_CLIMB_WITHOUT_GOLD}")
-    print(f"Agent: NaiveAgent (uniform random action selection)")
+    print(f"Agent: {agent_label}")
     if verbose:
         print("Output Mode: Verbose (per-turn visualization)")
     else:
         print("Output Mode: Summary (episode summaries only)")
     print("=" * 80 + "\n")
-    
+
     # Run episodes
     results = []
     for episode_num in range(NUM_EPISODES):
-        # Print episode title if verbose
         if verbose:
             print("\n\n" + "=" * 80)
             print(f"EPISODE {episode_num + 1}")
             print("=" * 80)
-        
+
         # Create new environment and agent for each episode
         env = WumpusWorld(
             width=WORLD_WIDTH,
@@ -77,15 +81,15 @@ def main() -> None:
             allow_climb_without_gold=ALLOW_CLIMB_WITHOUT_GOLD,
             pit_probability=PIT_PROBABILITY,
         )
-        agent = NaiveAgent()
-        
+        agent = MovePlanningAgent() if agent_choice == "move_planning" else NaiveAgent()
+
         # Optional visualizer
         visualizer = Visualizer(WORLD_WIDTH, WORLD_HEIGHT) if verbose else None
-        
+
         # Run episode
         result = run_episode(agent, env, visualizer=visualizer, verbose=verbose)
         results.append(result)
-        
+
         # Print episode summary
         status = "ESCAPED" if result["escaped"] else ("DIED" if result["died"] else "TIMEOUT")
         print(
@@ -98,18 +102,18 @@ def main() -> None:
             f"{status}"
             f"\n{'-' * 60}"
         )
-    
+
     # Print aggregate statistics
     print("\n" + "=" * 80)
     print("AGGREGATE STATISTICS")
     print("=" * 80)
-    
+
     total_reward = sum(r["total_reward"] for r in results)
     total_steps = sum(r["turns_taken"] for r in results)
     escapes = sum(1 for r in results if r["escaped"])
     deaths = sum(1 for r in results if r["died"])
     gold_collected = sum(1 for r in results if r["gold_collected"])
-    
+
     print(f"Total Episodes: {NUM_EPISODES}")
     print(f"Successful Escapes: {escapes}/{NUM_EPISODES} ({100*escapes/NUM_EPISODES:.1f}%)")
     print(f"Deaths: {deaths}/{NUM_EPISODES} ({100*deaths/NUM_EPISODES:.1f}%)")

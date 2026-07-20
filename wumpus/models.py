@@ -187,9 +187,10 @@ class AgentState:
         has_arrow: Whether the agent still has its arrow
     
     Note:
-        A simple agent may not use all these fields. A more sophisticated agent
-        could track beliefs about where the wumpus might be, which cells have pits, etc.
-        For Assignment 1, this is primarily for tracking action outcomes.
+        A simple agent may not use all these fields. More sophisticated agents
+        (e.g. MovePlanningAgent) track additional beliefs such as visited safe cells,
+        estimated position, and planned action sequences separately inside the agent class.
+        For reference implementations, this dataclass is primarily for action outcome tracking.
     """
     position: Position
     direction: Direction
