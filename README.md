@@ -272,7 +272,7 @@ Episodes end when:
 ## 📋 Implementation Status
 
 ### ✅ Assignment 2 Complete
-- [x] **move_planning_agent.py:** Dead-reckoning, filtered action pool, GRAB/CLIMB overrides, BFS escape execution ✅
+- [x] **move_planning_agent.py:** Dead-reckoning, filtered action pool (SHOOT dropped once arrow is spent), GRAB/CLIMB overrides, BFS escape execution ✅
 - [x] **bfs_planner.py:** `SafeGraph` (NetworkX DiGraph, 4 nodes per cell, turn + forward edges) + custom `bfs_shortest_actions` ✅
 - [x] **main.py:** `--agent {move_planning,naive}` flag, `MovePlanningAgent` default ✅
 - [x] **streamlit_app.py:** Agent sidebar dropdown, `MovePlanningAgent` default ✅

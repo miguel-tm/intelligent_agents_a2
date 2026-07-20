@@ -24,14 +24,24 @@ from agents.base_agent import Agent
 from agents.bfs_planner import SafeGraph, bfs_shortest_actions
 from wumpus.models import Action, Direction, Percept, Position
 
-# Exploration pool: GRAB and CLIMB are excluded (they are only taken via rule-based
-# overrides when the appropriate conditions are met).
-_EXPLORATION_POOL: list[Action] = [
+# Base exploration pool: GRAB and CLIMB are excluded (they are only taken via
+# rule-based overrides when the appropriate conditions are met).
+# SHOOT is included here but filtered out dynamically once the arrow is spent.
+_EXPLORATION_POOL_WITH_ARROW: list[Action] = [
     Action.FORWARD,
     Action.TURN_LEFT,
     Action.TURN_RIGHT,
     Action.SHOOT,
 ]
+
+_EXPLORATION_POOL_NO_ARROW: list[Action] = [
+    Action.FORWARD,
+    Action.TURN_LEFT,
+    Action.TURN_RIGHT,
+]
+
+# Keep a single public reference for tests that check pool membership
+_EXPLORATION_POOL = _EXPLORATION_POOL_WITH_ARROW
 
 
 class MovePlanningAgent(Agent):
@@ -67,6 +77,7 @@ class MovePlanningAgent(Agent):
         self._position: Position = start_position
         self._direction: Direction = start_direction
         self._has_gold: bool = False
+        self._has_arrow: bool = True
         self._visited_safe: set[Position] = set()
         self._safe_graph: SafeGraph = SafeGraph()
         self._last_action: Optional[Action] = None
@@ -129,8 +140,11 @@ class MovePlanningAgent(Agent):
             self._last_action = action
             return action
 
-        # Step 4: Filtered random exploration
-        action = self._rng.choice(_EXPLORATION_POOL)
+        # Step 4: Filtered random exploration (SHOOT only while arrow is in stock)
+        pool = _EXPLORATION_POOL_WITH_ARROW if self._has_arrow else _EXPLORATION_POOL_NO_ARROW
+        action = self._rng.choice(pool)
+        if action == Action.SHOOT:
+            self._has_arrow = False
         self._last_action = action
         return action
 
@@ -139,6 +153,7 @@ class MovePlanningAgent(Agent):
         self._position = self._start_position
         self._direction = self._start_direction
         self._has_gold = False
+        self._has_arrow = True
         self._visited_safe = set()
         self._safe_graph = SafeGraph()
         self._last_action = None
@@ -217,6 +232,11 @@ class MovePlanningAgent(Agent):
     def has_gold(self) -> bool:
         """Whether the agent currently holds the gold."""
         return self._has_gold
+
+    @property
+    def has_arrow(self) -> bool:
+        """Whether the agent still has the arrow."""
+        return self._has_arrow
 
     @property
     def visited_safe(self) -> set[Position]:

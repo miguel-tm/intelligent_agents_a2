@@ -26,6 +26,7 @@
 | `_position` | `Position` | Dead-reckoned current position (0-based) |
 | `_direction` | `Direction` | Dead-reckoned facing direction |
 | `_has_gold` | `bool` | Whether gold has been picked up |
+| `_has_arrow` | `bool` | Whether the arrow is still available to fire |
 | `_visited_safe` | `set[Position]` | All cells successfully entered |
 | `_safe_graph` | `SafeGraph` | NetworkX DiGraph of safe navigable states |
 | `_last_action` | `Action \| None` | Previous action (needed for dead reckoning) |
@@ -36,7 +37,7 @@
 2. Has gold + plan queued → pop next planned action
 3. Has gold + plan empty → run BFS; pop first action (or continue exploring if unreachable)
 4. Glitter sensed → `GRAB` (sets `_has_gold = True`)
-5. Otherwise → random choice from `[FORWARD, TURN_LEFT, TURN_RIGHT, SHOOT]`
+5. Otherwise → random choice from `[FORWARD, TURN_LEFT, TURN_RIGHT, SHOOT]` while arrow is available, or `[FORWARD, TURN_LEFT, TURN_RIGHT]` once the arrow has been fired
 
 **Dead reckoning:**
 - `FORWARD` + no bump → advance `_position` one step in `_direction`
