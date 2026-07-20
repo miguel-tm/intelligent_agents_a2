@@ -142,7 +142,7 @@ config = {
     "agent": agent_choice,
 }
 
-st.title("\U0001f479 Wumpus World \u2014 Advanced Visualization")
+st.title("\U0001f479 Wumpus World \u2014 Advanced Visualization \u2014 Miguel Morales")
 _agent_caption = "MovePlanningAgent (BFS escape planner)" if agent_choice == "move_planning" else "NaiveAgent (uniform random actions)"
 st.caption(f"{_agent_caption}. The ASCII CLI (main.py) remains available for debugging.")
 
